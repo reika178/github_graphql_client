@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gql_exec/gql_exec.dart';
 import 'package:gql_link/gql_link.dart';
 import 'package:gql_http_link/gql_http_link.dart';
+import 'package:window_to_front/window_to_front.dart';
 import 'github_oauth_credentials.dart';
 import 'src/github_gql/github_queries.data.gql.dart';
 import 'src/github_gql/github_queries.req.gql.dart';
@@ -33,6 +34,7 @@ class MyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return GithubLoginWidget(
       builder: (context,httpClient) {
+        WindowToFront.activate();
         final link = HttpLink(
           'https://api.github.com/graphql',
           httpClient: httpClient,
