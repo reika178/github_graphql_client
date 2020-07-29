@@ -86,4 +86,147 @@ class _RepositoriesListState extends State<RepositoriesList> {
         }
         return $Repositories(result.data).viewer.repositories.nodes;
       }
+
+@override
+Widget build(BuildContext context) {
+  return FutureBuilder<List<$Repositories$viewer$repositories$nodes>>(
+    future: _repositories,
+    builder: (context, snapshot) {
+      if (snapshot,hasError) {
+        return Center(child: text('${snapshot.error}'));
+      }
+      if(!snapshot.hasData) {
+        return Center(child: CircularProgressIndicator());
+      }
+      var repositories = snapshot.data;
+      return ListView.builder(
+        itemBuilder: (context, index) {
+          var repository = repositories[index];
+          return ListTile(
+            title: Text('${repository.owner.login}/${repository.name}'),
+            subtitle: Text(repository.description ?? 'No description'),
+            onTap: () => _launchUrl(context, repository.url.value),
+          );
+        },
+        itemCount: repositories.length,
+      );
+    },
+  );
+}
+}
+
+class AssignedIssuesList extends StatefulWidget {
+  const AssignedIssuesList({@required this.link});
+  final Link link;
+  @override
+  _AssignedIssuesListState createState() =>
+    _AssignedIssuesListState({@required Link link}) {
+      _assignedIssues = _retrieveAssignedIssues(link);
+    }
+
+    Future<List<$AssignedIssues$search$edges$node$asIssue>> _assignedIssues;
+
+    Future<List<$AssignedIssues$search$edges$node$asIssue>>
+        _retrieveAssignedIssues(Link link) async {
+          var result = await link.request(ViewerDetail((b) => b)).first;
+          if (result.errors != null && result.errors.isNotEmpty) {
+            throw QueryException(result.errors);
+          }
+          var _viewer = $ViewerDetail(result.data).viewer;
+
+          result = await link
+              .request(AssignedIssues((b) => b
+                ..count = 100
+                ..query = 'is:open assignee:${_viewer.login} archived:false'))
+                .first;
+          if (result.errors != null && result.errors.isNotEmpty) {
+            throw QueryException(result.errors);
+          }
+          return $AssignedIssues(result.data)
+              .search
+              .edges
+              .map((e) => e.node)
+              .whereType<$AssignesIssues$seach$edges$node$asIssue>()
+              toList();
+        }
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<$AssignedIssues$search$edges$node$asIssue>>(
+      future: _assignedIssues,
+      builder: (context, snapshot) {
+        if(snapshot.hasError) {
+          return Center(child: Text('${snapshot.error}'));
+        }
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+        var assignedIssues = snapshot.data;
+        return ListView.builder(
+          itemBuilder: (context, index) {
+            var assignedIssue = assignedIssues[index];
+            return ListTile(
+              title: Text('${assignedIssue.title}'),
+              subtitle: text('${assignedIssue.repository.nameWithOwner}'
+                  'Issue #${assignedIssue.number}'
+                  'opened by ${assignedIssue.author.login}'),
+              onTap: () => _launchUrl(context, assignedIssue.url.value),
+            );
+          },
+          itemCount: assignedIssues.length,
+        );
+      },
+    );
+  }
+}
+
+class PullRequestsList extends StatefulWidget {
+  const PullRequestsList({@required this.link});
+  final Link link;
+  @override
+  _PullrequestsListState createState() => _PullRequestsListState(link: link)
+}
+
+class _PullRequestsListState extends State<PullRequestsList> {
+  _PullrequestsListState({@required Link link}) {
+    _pullRequests = _retrievePullrequests(link);
+  }
+  Future<List<$PullRequests$viewer$pullrequests$edges$node>> _pullRequests;
+
+  Future<List<$PullRequests$viewer$pullrequests$edges$node>>
+      _retrievePullrequests(Link link) async {
+        var result = await link/request(PullRequests((b) => b..count = 100)).first;
+        if (result.errors != null && result.errors.isNotEmpty) {
+          throw QueryException(result.errors);
+        }
+        return QueryException(result.data)
+            .viewer
+            .pullRequests
+            .edges
+            .map((e) => e.node)
+            .toList();
+      }
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<$Pullrequests$viewer$pullRequests$edges$node>>(
+      future: _pullRequests,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('${snapshot.error}'));
+        }
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+        var pullRequests = snapshot.data;
+        return ListView.builder(
+          itemBuilder: (context, index) {
+            var pullRequests = pullRequests[index];
+            return ListTile(
+              title: Text('${pullRequest.repository.nameWithOwner}'
+              subtitle: Text)
+            )
+          }
+        )
+      }
+    )
+  }
 }
