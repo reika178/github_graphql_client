@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fluttericon/octicons.dart';
+import 'package:fluttericon/octicons_icons.dart';
 import 'package:gql_exec/gql_exec.dart';
 import 'package:gql_http_link/gql_http_link.dart';
 import 'package:gql_link/gql_link.dart';
@@ -16,7 +16,7 @@ class GitHubSummary extends StatefulWidget {
       );
   final HttpLink _link;
   @override
-  _GitHubSummaryState createState() => _GitHubSummyState();
+  _GitHubSummaryState createState() => _GitHubSummaryState();
 }
 
 class _GitHubSummaryState extends State<GitHubSummary> {
@@ -56,7 +56,7 @@ class _GitHubSummaryState extends State<GitHubSummary> {
             children: [
               RepositoriesList(link: widget._link),
               AssignedIssuesList(link: widget._link),
-              PullrequestsList(link: widget._link),
+              PullRequestsList(link: widget._link),
             ],
           ),
         ),
@@ -69,11 +69,11 @@ class RepositoriesList extends StatefulWidget {
   const RepositoriesList({@required this.link});
     final Link link;
     @override
-    _RepositoriesListState createState() => _RepositoriesListState(link: link)
+    _RepositoriesListState createState() => _RepositoriesListState(link: link);
 }
 
 class _RepositoriesListState extends State<RepositoriesList> {
-  _RepositorieslistState({@required Link link}) {
+  _RepositoriesListState({@required Link link}) {
     _repositories = _retreiveRespositories(link);
   }
   Future<List<$Repositories$viewer$repositories$nodes>> _repositories;
@@ -92,8 +92,8 @@ Widget build(BuildContext context) {
   return FutureBuilder<List<$Repositories$viewer$repositories$nodes>>(
     future: _repositories,
     builder: (context, snapshot) {
-      if (snapshot,hasError) {
-        return Center(child: text('${snapshot.error}'));
+      if (snapshot.hasError) {
+        return Center(child: Text('${snapshot.error}'));
       }
       if(!snapshot.hasData) {
         return Center(child: CircularProgressIndicator());
@@ -120,6 +120,10 @@ class AssignedIssuesList extends StatefulWidget {
   final Link link;
   @override
   _AssignedIssuesListState createState() =>
+    _AssignedIssuesListState(link: link);
+}
+
+class _AssignedIssuesListState extends State<AssignedIssuesList> {
     _AssignedIssuesListState({@required Link link}) {
       _assignedIssues = _retrieveAssignedIssues(link);
     }
@@ -146,8 +150,8 @@ class AssignedIssuesList extends StatefulWidget {
               .search
               .edges
               .map((e) => e.node)
-              .whereType<$AssignesIssues$seach$edges$node$asIssue>()
-              toList();
+              .whereType<$AssignedIssues$search$edges$node$asIssue>()
+              .toList();
         }
   @override
   Widget build(BuildContext context) {
@@ -166,7 +170,7 @@ class AssignedIssuesList extends StatefulWidget {
             var assignedIssue = assignedIssues[index];
             return ListTile(
               title: Text('${assignedIssue.title}'),
-              subtitle: text('${assignedIssue.repository.nameWithOwner}'
+              subtitle: Text('${assignedIssue.repository.nameWithOwner}'
                   'Issue #${assignedIssue.number}'
                   'opened by ${assignedIssue.author.login}'),
               onTap: () => _launchUrl(context, assignedIssue.url.value),
@@ -183,22 +187,22 @@ class PullRequestsList extends StatefulWidget {
   const PullRequestsList({@required this.link});
   final Link link;
   @override
-  _PullrequestsListState createState() => _PullRequestsListState(link: link)
+  _PullRequestsListState createState() => _PullRequestsListState(link: link);
 }
 
 class _PullRequestsListState extends State<PullRequestsList> {
-  _PullrequestsListState({@required Link link}) {
+  _PullRequestsListState({@required Link link}) {
     _pullRequests = _retrievePullrequests(link);
   }
-  Future<List<$PullRequests$viewer$pullrequests$edges$node>> _pullRequests;
+  Future<List<$PullRequests$viewer$pullRequests$edges$node>> _pullRequests;
 
-  Future<List<$PullRequests$viewer$pullrequests$edges$node>>
+  Future<List<$PullRequests$viewer$pullRequests$edges$node>>
       _retrievePullrequests(Link link) async {
-        var result = await link/request(PullRequests((b) => b..count = 100)).first;
+        var result = await link.request(PullRequests((b) => b..count = 100)).first;
         if (result.errors != null && result.errors.isNotEmpty) {
           throw QueryException(result.errors);
         }
-        return QueryException(result.data)
+        return $PullRequests(result.data)
             .viewer
             .pullRequests
             .edges
@@ -207,7 +211,7 @@ class _PullRequestsListState extends State<PullRequestsList> {
       }
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<$Pullrequests$viewer$pullRequests$edges$node>>(
+    return FutureBuilder<List<$PullRequests$viewer$pullRequests$edges$node>>(
       future: _pullRequests,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -219,14 +223,50 @@ class _PullRequestsListState extends State<PullRequestsList> {
         var pullRequests = snapshot.data;
         return ListView.builder(
           itemBuilder: (context, index) {
-            var pullRequests = pullRequests[index];
+            var pullRequest = pullRequests[index];
             return ListTile(
-              title: Text('${pullRequest.repository.nameWithOwner}'
-              subtitle: Text)
-            )
-          }
-        )
-      }
-    )
+              title: Text('${pullRequest.repository.nameWithOwner}'),
+              subtitle: Text('${pullRequest.repository.nameWithOwner}'
+                  'PR #${pullRequest.number}'
+                  'opened by ${pullRequest.author.login}'
+                  '(${pullRequest.state.value.toLowerCase()}'),
+              onTap: () => _launchUrl(context, pullRequest.url.value),
+                  );
+          },
+          itemCount: pullRequests.length,
+        );
+      },
+    );
+  }
+}
+
+class QueryException implements Exception {
+  QueryException(this.errors);
+  List<GraphQLError> errors;
+  @override
+  String toString() {
+    return 'Query Exception: ${errors.map((err) => '$err').join(',')}';
+  }
+}
+
+Future<void> _launchUrl(BuildContext context, String url) async {
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Navigation error'),
+        content: Text('Could not launch $url'),
+        actions: <Widget>[
+          FlatButton(
+            child: Text('Close'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
